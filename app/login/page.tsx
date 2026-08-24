@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Box, Typography, FormControlLabel, Checkbox, Link } from '@mui/material';
+import { TextField, Button, Container, Box, Typography, Link } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
 import { isAdminUser, login } from '../../redux/slices/authSlice';
@@ -38,6 +38,7 @@ export default function LoginPage() {
           <TextField
             fullWidth
             label="Email"
+            name='email'
             type="email"
             variant="outlined"
             value={email}
@@ -48,6 +49,7 @@ export default function LoginPage() {
           <TextField
             fullWidth
             label="Password"
+            name='password'
             type="password"
             variant="outlined"
             value={password}

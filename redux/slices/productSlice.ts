@@ -50,7 +50,7 @@ export interface ProductState {
   counts: {
     all: number;
     available: number;
-    soldOut: number;
+   
   };
 }
 
@@ -71,7 +71,7 @@ const initialState: ProductState = {
   page: 1,
   limit: 10,
   totalPages: 1,
-  counts: { all: 0, available: 0, soldOut: 0 },
+  counts: { all: 0, available: 0 },
 };
 
 const getStoredToken = () => {

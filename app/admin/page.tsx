@@ -36,11 +36,19 @@ import { isAdminUser, logout } from '../../redux/slices/authSlice';
 
 const API_URL=process.env.NEXT_PUBLIC_API_URL
 
-type ProductFilter = 'all' | 'available' | 'soldOut';
+type ProductFilter = 'all' | 'available' ;
 
 type SortBy = 'name' | 'price' | 'stock';
 
 const PAGE_SIZE = 12;
+const adminViewStorageKey = 'admin-products-view-state';
+
+type AdminViewState = {
+  filter: ProductFilter;
+  search: string;
+  sortBy: SortBy;
+  page: number;
+};
 
 const imageUrl = (image: string) =>
   image.startsWith('http')
@@ -77,6 +85,11 @@ export default function AdminPage() {
         localStorage.getItem('token')),
   );
 
+  const userStorageId =
+    user?.id || user?._id || user?.email || 'anonymous';
+  const scopedAdminViewStorageKey =
+    `${adminViewStorageKey}:${userStorageId}`;
+
   const [search, setSearch] = useState('');
 
   const [sortBy, setSortBy] =
@@ -88,6 +101,8 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
 
   const [mounted, setMounted] = useState(false);
+
+  const [restored, setRestored] = useState(false);
 
   /*
    * Mount component on client.
@@ -102,11 +117,92 @@ export default function AdminPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const savedState = sessionStorage.getItem(
+        scopedAdminViewStorageKey,
+      );
+
+      if (savedState) {
+        try {
+          const parsedState =
+            JSON.parse(savedState) as AdminViewState;
+
+          if (
+            parsedState.filter === 'all' ||
+            parsedState.filter === 'available'
+          ) {
+            setFilter(parsedState.filter);
+          }
+
+          if (typeof parsedState.search === 'string') {
+            setSearch(parsedState.search);
+          }
+
+          if (
+            parsedState.sortBy === 'name' ||
+            parsedState.sortBy === 'price' ||
+            parsedState.sortBy === 'stock'
+          ) {
+            setSortBy(parsedState.sortBy);
+          }
+
+          if (
+            typeof parsedState.page === 'number' &&
+            parsedState.page > 0
+          ) {
+            setPage(parsedState.page);
+          }
+        } catch {
+          sessionStorage.removeItem(
+            scopedAdminViewStorageKey,
+          );
+        }
+      }
+
+      setRestored(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [mounted, scopedAdminViewStorageKey]);
+
+  useEffect(() => {
+    if (!mounted || !restored) {
+      return;
+    }
+
+    const state: AdminViewState = {
+      filter,
+      search,
+      sortBy,
+      page,
+    };
+
+    sessionStorage.setItem(
+      scopedAdminViewStorageKey,
+      JSON.stringify(state),
+    );
+  }, [
+    filter,
+    search,
+    sortBy,
+    page,
+    mounted,
+    restored,
+    scopedAdminViewStorageKey,
+  ]);
+
   /*
    * Authentication + server-side product request.
    */
   useEffect(() => {
-    if (!mounted) {
+    if (!mounted || !restored) {
       return;
     }
 
@@ -147,6 +243,7 @@ export default function AdminPage() {
     isAdmin,
     mounted,
     page,
+    restored,
     router,
     search,
     sortBy,
@@ -404,15 +501,7 @@ const handleDelete = async (
               }
             />
 
-            <Tab
-              value="soldOut"
-              label={
-                <TabLabel
-                  label="Sold out"
-                  count={counts.soldOut}
-                />
-              }
-            />
+       
           </Tabs>
 
           {/* Search + Sort */}

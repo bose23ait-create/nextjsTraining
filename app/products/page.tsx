@@ -28,7 +28,7 @@ import type { AppDispatch, RootState } from '../../redux/store';
 import { getProducts } from '../../redux/slices/productSlice';
 import { logout } from '../../redux/slices/authSlice';
 
-type ProductFilter = 'all' | 'available' | 'soldOut';
+type ProductFilter = 'all' | 'available' ;
 
 type ProductViewState = {
   filter: ProductFilter;
@@ -56,6 +56,10 @@ export default function ProductsPage() {
     (state: RootState) => state.auth.token,
   );
 
+  const user = useSelector(
+    (state: RootState) => state.auth.user,
+  );
+
   const {
     products,
     loading,
@@ -69,6 +73,11 @@ export default function ProductsPage() {
       (typeof window !== 'undefined' &&
         localStorage.getItem('token')),
   );
+
+  const userStorageId =
+    user?.id || user?._id || user?.email || 'anonymous';
+  const scopedProductViewStorageKey =
+    `${productViewStorageKey}:${userStorageId}`;
 
   const [mounted, setMounted] = useState(false);
 
@@ -102,11 +111,12 @@ export default function ProductsPage() {
    * Restore filter/search/sort/page
    * from sessionStorage.
    */
-  useEffect(() => {
-    if (!mounted) return;
+useEffect(() => {
+  if (!mounted) return;
 
+  const frame = window.requestAnimationFrame(() => {
     const savedState = sessionStorage.getItem(
-      productViewStorageKey,
+      scopedProductViewStorageKey,
     );
 
     if (savedState) {
@@ -116,8 +126,7 @@ export default function ProductsPage() {
 
         if (
           parsedState.filter === 'all' ||
-          parsedState.filter === 'available' ||
-          parsedState.filter === 'soldOut'
+          parsedState.filter === 'available'
         ) {
           setFilter(parsedState.filter);
         }
@@ -142,13 +151,18 @@ export default function ProductsPage() {
         }
       } catch {
         sessionStorage.removeItem(
-          productViewStorageKey,
+          scopedProductViewStorageKey,
         );
       }
     }
 
     setRestored(true);
-  }, [mounted]);
+  });
+
+  return () => {
+    window.cancelAnimationFrame(frame);
+  };
+}, [mounted, scopedProductViewStorageKey]);
 
   /*
    * Save filter/search/sort/page
@@ -165,7 +179,7 @@ export default function ProductsPage() {
     };
 
     sessionStorage.setItem(
-      productViewStorageKey,
+      scopedProductViewStorageKey,
       JSON.stringify(state),
     );
   }, [
@@ -175,6 +189,7 @@ export default function ProductsPage() {
     page,
     mounted,
     restored,
+    scopedProductViewStorageKey,
   ]);
 
   /*
@@ -369,15 +384,6 @@ export default function ProductsPage() {
               }
             />
 
-            <Tab
-              value="soldOut"
-              label={
-                <TabLabel
-                  label="Sold out"
-                  count={counts.soldOut}
-                />
-              }
-            />
           </Tabs>
 
           {/* Search + Sort */}
