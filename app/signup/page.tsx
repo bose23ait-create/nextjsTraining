@@ -44,19 +44,20 @@ export default function Signup() {
     };
 
     return (
-        <Container maxWidth="sm">
+        <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', py: 4, background: 'linear-gradient(135deg, #e6f0ed 0%, #f7f8f6 55%, #f5e9df 100%)' }}>
+            <Container maxWidth="sm">
             <Box
                 sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: '100vh',
-                    gap: 2,
+                    bgcolor: '#fff',
+                    border: '1px solid var(--line)',
+                    p: { xs: 3, sm: 5 },
+                    maxWidth: 480,
+                    mx: 'auto',
                 }}
             >
-                <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    Sign up
+               
+                <Typography component="h1" sx={{ mt: 1, fontSize: '2rem', fontWeight: 800, letterSpacing: '-.04em' }}>
+                    Create your account
                 </Typography>
 
                 <Box
@@ -125,7 +126,6 @@ export default function Signup() {
                     <Button
                         variant="contained"
                         color="primary"
-                        size="large"
                         type="submit"
                         disabled={loading}
                         sx={{ mt: 1 }}
@@ -134,13 +134,14 @@ export default function Signup() {
                     </Button>
                 </Box>
 
-                <Typography variant="body2" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ mt: 3, color: 'var(--muted)' }}>
                     Already have an account?{' '}
                     <Link href="/login" underline="hover" sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
                         Login
                     </Link>
                 </Typography>
             </Box>
-        </Container>
+            </Container>
+        </Box>
     );
 }

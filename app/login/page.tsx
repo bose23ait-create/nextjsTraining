@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Box, Typography, FormControlLabel, Checkbox, Link } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../redux/store';
-import { login } from '../../redux/slices/authSlice';
+import { isAdminUser, login } from '../../redux/slices/authSlice';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -21,23 +21,19 @@ export default function LoginPage() {
     const result = await dispatch(login({ email, password }));
 
     if (login.fulfilled.match(result)) {
-      router.push('/');
+      const redirectPath = isAdminUser(result.payload?.user ?? result.payload) ? '/admin' : '/products';
+      router.push(redirectPath);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        minHeight: '100vh',
-        gap: 2 
-      }}>
-        <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', mb: 2 }}>
-          Login
-        </Typography>
+    <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', py: 4, background: 'linear-gradient(135deg, #e6f0ed 0%, #f7f8f6 55%, #f5e9df 100%)' }}>
+      <Container maxWidth="sm">
+        <Box sx={{ bgcolor: '#fff', border: '1px solid var(--line)', p: { xs: 3, sm: 5 }, maxWidth: 480, mx: 'auto' }}>
+          <Typography component="h1" sx={{ mt: 1, fontSize: '2rem', fontWeight: 800, letterSpacing: '-.04em' }}>
+            Welcome back
+          </Typography>
+          <Typography sx={{ color: 'var(--muted)', mt: 1, mb: 3 }}>Sign in to continue shopping.</Typography>
         
         <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', gap: 2, display: 'flex', flexDirection: 'column' }}>
           <TextField
@@ -74,7 +70,6 @@ export default function LoginPage() {
           <Button 
             variant="contained" 
             color="primary" 
-            size="large"
             type="submit"
             disabled={loading}
             sx={{ mt: 1 }}
@@ -83,13 +78,14 @@ export default function LoginPage() {
           </Button>
         </Box>
         
-        <Typography variant="body2" sx={{ mt: 2 }}>
-          Don't have an account?{' '}
+        <Typography variant="body2" sx={{ mt: 3, color: 'var(--muted)' }}>
+          Don&apos;t have an account?{' '}
           <Link href="/signup" underline="hover" sx={{ cursor: 'pointer', fontWeight: 'bold' }}>
             Sign up
           </Link>
         </Typography>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
 }

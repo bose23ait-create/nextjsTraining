@@ -1,9 +1,11 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 interface User {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   email: string;
+  role?: 'admin' | 'user' | string;
 }
 
 interface AuthState {
@@ -13,11 +15,62 @@ interface AuthState {
   error: string | null;
 }
 
+type AuthRecord = Record<string, unknown>;
+
+const getRoleValue = (user: AuthRecord | null | undefined): string => {
+  const role = user?.role ?? user?.roles ?? user?.isAdmin ?? user?.is_admin;
+
+  if (Array.isArray(role)) {
+    return String(role[0] ?? 'user');
+  }
+
+  return String(role ?? 'user');
+};
+
+const normalizeUser = (payload: AuthRecord | null | undefined): User | null => {
+  if (!payload) return null;
+
+  const user = (payload.user ?? payload) as AuthRecord;
+  const roleValue = getRoleValue(user).toLowerCase();
+
+  return {
+    id: String(user.id ?? user._id ?? ''),
+    _id: String(user._id ?? user.id ?? ''),
+    name: String(user.name ?? ''),
+    email: String(user.email ?? ''),
+    role: roleValue === 'admin' ? 'admin' : 'user',
+  };
+};
+
+export const isAdminUser = (user: User | null) => {
+  const role = user?.role?.toLowerCase();
+  return role === 'admin';
+};
+
 const initialState: AuthState = {
   user: null,
   token: null,
   loading: false,
   error: null,
+};
+
+const loadStoredAuth = (): Partial<AuthState> => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const savedToken = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('user');
+
+  return {
+    token: savedToken,
+    user: savedUser ? normalizeUser(JSON.parse(savedUser)) : null,
+  };
+};
+
+const authInitialState: AuthState = {
+  ...initialState,
+  ...loadStoredAuth(),
 };
 
 export const login = createAsyncThunk(
@@ -38,10 +91,12 @@ export const login = createAsyncThunk(
       const data = await response.json();
 
       if (!response.ok) {
-        return rejectWithValue(data.message);
+        return rejectWithValue(data.message || 'Login failed');
       }
 
-      localStorage.setItem('token', data.access_token);
+      if (typeof window !== 'undefined' && data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      }
 
       return data;
     } catch {
@@ -82,12 +137,15 @@ export const register = createAsyncThunk(
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: authInitialState,
   reducers: {
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     },
   },
 
@@ -100,8 +158,12 @@ const authSlice = createSlice({
 
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.token = action.payload.access_token;
-        state.user = null;
+        state.token = action.payload.access_token || action.payload.token || null;
+        state.user = normalizeUser(action.payload);
+
+        if (typeof window !== 'undefined' && state.user) {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        }
       })
 
       .addCase(login.rejected, (state, action) => {
@@ -114,8 +176,9 @@ const authSlice = createSlice({
         state.error = null;
       })
 
-      .addCase(register.fulfilled, (state) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
+        state.user = normalizeUser(action.payload);
         state.error = null;
       })
 
