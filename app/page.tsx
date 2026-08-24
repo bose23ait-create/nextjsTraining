@@ -1,69 +1,155 @@
-import Image from "next/image";
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  Container,
+  InputAdornment,
+  Skeleton,
+  TextField,
+  Typography,
+} from '@mui/material';
+import type { RootState } from '../redux/store';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../redux/store';
+import { getProducts } from '../redux/slices/productSlice';
 
 export default function Home() {
+  const router = useRouter();
+  const token = useSelector((state: RootState) => state.auth.token);
+  const dispatch = useDispatch<AppDispatch>();
+  const { products, loading, error } = useSelector(
+    (state: RootState) => state.products,
+  );
+  const hasToken = Boolean(
+    token || (typeof window !== 'undefined' && localStorage.getItem('token')),
+  );
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (!hasToken) {
+      router.replace('/login');
+    }
+  }, [hasToken, router]);
+
+  useEffect(() => {
+    if (!hasToken) {
+      return;
+    }
+
+    void dispatch(getProducts()).then((result) => {
+      if (getProducts.rejected.match(result) && result.payload === 'Your session has expired') {
+        localStorage.removeItem('token');
+        router.replace('/login');
+      }
+    });
+  }, [dispatch, hasToken, router]);
+
+  if (!hasToken) {
+    return null;
+  }
+
+  const visibleProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', py: { xs: 4, md: 7 } }}>
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: { xs: 'stretch', md: 'flex-end' },
+            justifyContent: 'space-between',
+            gap: 3,
+            mb: 5,
+            flexDirection: { xs: 'column', md: 'row' },
+          }}
+        >
+          <Box>
+            <Typography variant="overline" sx={{ color: '#176b87', fontWeight: 700, letterSpacing: 1.5 }}>
+              Catalog
+            </Typography>
+            <Typography component="h1" variant="h2" sx={{ fontWeight: 800, color: '#142b3a', fontSize: { xs: '2.4rem', md: '3.5rem' } }}>
+              Products
+            </Typography>
+            <Typography sx={{ color: '#60717c', mt: 1 }}>
+              Browse the latest products in your inventory.
+            </Typography>
+          </Box>
+
+          <TextField
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search products"
+            aria-label="Search products"
+            sx={{ width: { xs: '100%', md: 300 }, bgcolor: '#fff' }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Box component="span" aria-hidden="true" sx={{ color: '#176b87', fontSize: 20 }}>
+                      &#128269;
+                    </Box>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </Box>
+
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+        {loading ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
+            {[1, 2, 3].map((item) => (
+              <Card key={item} sx={{ borderRadius: 2 }}>
+                <Skeleton variant="rectangular" height={210} />
+                <CardContent><Skeleton width="65%" /><Skeleton /><Skeleton width="35%" /></CardContent>
+              </Card>
+            ))}
+          </Box>
+        ) : visibleProducts.length === 0 ? (
+          <Box sx={{ py: 10, textAlign: 'center', border: '1px dashed #b5c5cc', bgcolor: '#fff' }}>
+            <Typography variant="h6" sx={{ color: '#304954', fontWeight: 700 }}>
+              {search ? 'No matching products' : 'No products available'}
+            </Typography>
+            <Typography sx={{ color: '#71828b', mt: 1 }}>
+              {search ? 'Try a different search term.' : 'Products will appear here when they are added.'}
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
+            {visibleProducts.map((product) => (
+              <Card key={product._id} sx={{ display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden', boxShadow: '0 8px 24px rgba(20, 43, 58, 0.08)' }}>
+                {product.images[0] ? (
+                  <Box component="img" src={`http://localhost:3000${product.images[0]}`} alt={product.name} sx={{ width: '100%', height: 210, objectFit: 'cover' }} />
+                ) : (
+                  <Box sx={{ height: 210, bgcolor: '#dce9e8', display: 'grid', placeItems: 'center' }}>
+                    <Typography sx={{ color: '#176b87', fontWeight: 700 }}>No image</Typography>
+                  </Box>
+                )}
+                <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'flex-start' }}>
+                    <Typography variant="h6" sx={{ color: '#142b3a', fontWeight: 700 }}>{product.name}</Typography>
+                    <Typography sx={{ color: '#176b87', fontWeight: 800, whiteSpace: 'nowrap' }}>${product.price.toFixed(2)}</Typography>
+                  </Box>
+                  <Typography sx={{ color: '#667983', mt: 1.5, lineHeight: 1.6 }}>{product.description}</Typography>
+                  <Typography sx={{ color: product.stock > 0 ? '#27815b' : '#bd4b45', fontWeight: 700, mt: 2 }}>
+                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 }
