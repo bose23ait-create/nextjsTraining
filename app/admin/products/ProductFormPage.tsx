@@ -13,6 +13,7 @@ import {
 } from '../../../redux/slices/productSlice';
 import { isAdminUser, logout } from '../../../redux/slices/authSlice';
 
+const API_URL=process.env.NEXT_PUBLIC_API_URL
 const emptyForm: ProductFormData = {
   name: '',
   description: '',
@@ -193,7 +194,7 @@ export default function ProductFormPage({ productId }: ProductFormPageProps) {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1.5 }}>
                   {existingImages.map((image) => (
                     <Box key={image} sx={{ position: 'relative', width: 88, height: 88, borderRadius: 1, overflow: 'hidden', border: '1px solid var(--line)' }}>
-                      <Box component="img" src={`http://localhost:3000${image}`} alt="Current product" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <Box component="img" src={`${API_URL}${image}`} alt="Current product" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <Button aria-label="Remove current image" onClick={() => removeExistingImage(image)} sx={{ position: 'absolute', top: 2, right: 2, minWidth: 24, width: 24, height: 24, p: 0, borderRadius: '50%', bgcolor: '#fff', color: '#b8564c', '&:hover': { bgcolor: '#fff' } }}>x</Button>
                     </Box>
                   ))}

@@ -73,6 +73,7 @@ const authInitialState: AuthState = {
   ...loadStoredAuth(),
 };
 
+const API_URL=process.env.NEXT_PUBLIC_API_URL 
 export const login = createAsyncThunk(
   'auth/login',
   async (
@@ -80,7 +81,7 @@ export const login = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await fetch('http://localhost:3000/users/login', {
+      const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export const register = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await fetch('http://localhost:3000/users/register', {
+      const response = await fetch(`${API_URL}/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

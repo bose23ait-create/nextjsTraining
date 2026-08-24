@@ -17,7 +17,7 @@ export interface ProductFormData {
   images?: Array<string | File>;
   existingImages?: string[];
 }
-
+const API_URL=process.env.NEXT_PUBLIC_API_URL
 const appendProductFormData = (formData: FormData, productData: ProductFormData) => {
   formData.append('name', productData.name);
   formData.append('description', productData.description);
@@ -111,7 +111,7 @@ export const getProducts = createAsyncThunk<
     if (queryParams.name) query.set('name', queryParams.name);
     if (queryParams.stockAvailable !== undefined) query.set('stockAvailable', String(queryParams.stockAvailable));
 
-    const response = await fetch(`http://localhost:3000/products?${query.toString()}`, {
+    const response = await fetch(`${API_URL}/products?${query.toString()}`, {
       headers: getAuthHeaders(),
     });
 
@@ -144,7 +144,7 @@ export const createProduct = createAsyncThunk<
     const formData = new FormData();
     appendProductFormData(formData, productData);
 
-    const response = await fetch('http://localhost:3000/products', {
+    const response = await fetch(`${API_URL}/products`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: formData,
@@ -181,7 +181,7 @@ export const updateProduct = createAsyncThunk<
     const formData = new FormData();
     appendProductFormData(formData, productData);
 
-    const response = await fetch(`http://localhost:3000/products/${id}`, {
+    const response = await fetch(`${API_URL}/products/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: formData,
@@ -215,7 +215,7 @@ export const deleteProduct = createAsyncThunk<
   }
 
   try {
-    const response = await fetch(`http://localhost:3000/products/${id}`, {
+    const response = await fetch(`${API_URL}/products/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });

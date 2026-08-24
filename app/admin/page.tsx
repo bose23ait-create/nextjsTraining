@@ -9,11 +9,8 @@ import {
   Button,
   Chip,
   Container,
-  FormControl,
-  MenuItem,
   Pagination,
   Paper,
-  Select,
   Skeleton,
   Tab,
   Table,
@@ -37,16 +34,18 @@ import {
 
 import { isAdminUser, logout } from '../../redux/slices/authSlice';
 
+const API_URL=process.env.NEXT_PUBLIC_API_URL
+
 type ProductFilter = 'all' | 'available' | 'soldOut';
 
-type PageSize = 12 | 20 | 40 | 50;
-
 type SortBy = 'name' | 'price' | 'stock';
+
+const PAGE_SIZE = 12;
 
 const imageUrl = (image: string) =>
   image.startsWith('http')
     ? image
-    : `http://localhost:3000${image}`;
+    : `${API_URL}${image}`;
 
 export default function AdminPage() {
   const router = useRouter();
@@ -88,9 +87,6 @@ export default function AdminPage() {
 
   const [page, setPage] = useState(1);
 
-  const [pageSize, setPageSize] =
-    useState<PageSize>(12);
-
   const [mounted, setMounted] = useState(false);
 
   /*
@@ -127,7 +123,7 @@ export default function AdminPage() {
     void dispatch(
       getProducts({
         page,
-        limit: pageSize,
+        limit: PAGE_SIZE,
         name: search,
         stockAvailable:
           filter === 'all'
@@ -151,7 +147,6 @@ export default function AdminPage() {
     isAdmin,
     mounted,
     page,
-    pageSize,
     router,
     search,
     sortBy,
@@ -173,26 +168,42 @@ export default function AdminPage() {
   /*
    * Delete product.
    */
-  const handleDelete = async (
-    productId: string,
-  ) => {
-    if (!isAdmin) {
-      return;
+const handleDelete = async (
+  productId: string,
+) => {
+  if (!isAdmin) {
+    return;
+  }
+
+  const result = await dispatch(
+    deleteProduct(productId),
+  );
+
+  if (deleteProduct.fulfilled.match(result)) {
+    const nextPage =
+      products.length === 1 && page > 1
+        ? page - 1
+        : page;
+
+    if (nextPage !== page) {
+      setPage(nextPage);
     }
 
-    await dispatch(deleteProduct(productId));
-
-    /*
-     * If deleting the last product on the current page,
-     * move back one page.
-     */
-    if (
-      products.length === 1 &&
-      page > 1
-    ) {
-      setPage((previousPage) => previousPage - 1);
-    }
-  };
+    // Fetch latest products and counts
+    void dispatch(
+      getProducts({
+        page: nextPage,
+        limit: PAGE_SIZE,
+        name: search,
+        stockAvailable:
+          filter === 'all'
+            ? undefined
+            : filter === 'available',
+        sortBy,
+      }),
+    );
+  }
+};
 
   /*
    * Logout.
@@ -234,16 +245,6 @@ export default function AdminPage() {
   };
 
   /*
-   * Page size.
-   */
-  const handlePageSizeChange = (
-    value: PageSize,
-  ) => {
-    setPageSize(value);
-    setPage(1);
-  };
-
-  /*
    * Pagination.
    */
   const handlePageChange = (
@@ -260,6 +261,11 @@ export default function AdminPage() {
   ) {
     return null;
   }
+
+  const currentPage = Math.min(
+    page,
+    Math.max(1, totalPages),
+  );
 
   return (
     <Box
@@ -439,32 +445,35 @@ export default function AdminPage() {
               }}
             />
 
-            <FormControl
-              size="small"
-              sx={{ minWidth: 150 }}
+            <select
+              value={sortBy}
+              onChange={(event) =>
+                handleSortChange(
+                  event.target.value as SortBy,
+                )
+              }
+              aria-label="Sort products"
+              style={{
+                height: '40px',
+                minWidth: '150px',
+                padding: '0 12px',
+                border: '1px solid #c4c9ce',
+                borderRadius: '4px',
+                backgroundColor: '#fff',
+              }}
             >
-              <Select
-                value={sortBy}
-                onChange={(event) =>
-                  handleSortChange(
-                    event.target.value as SortBy,
-                  )
-                }
-                aria-label="Sort products"
-              >
-                <MenuItem value="name">
-                  Sort by name
-                </MenuItem>
+              <option value="name">
+                Sort by name
+              </option>
 
-                <MenuItem value="price">
-                  Sort by price
-                </MenuItem>
+              <option value="price">
+                Sort by price
+              </option>
 
-                <MenuItem value="stock">
-                  Sort by availability
-                </MenuItem>
-              </Select>
-            </FormControl>
+              <option value="stock">
+                Sort by availability
+              </option>
+            </select>
           </Box>
 
           {/* Error */}
@@ -556,6 +565,7 @@ export default function AdminPage() {
                   : 'Products will appear here when they are added.'}
               </Typography>
             </Box>
+
           ) : (
 
             /* Server response data table */
@@ -836,67 +846,14 @@ export default function AdminPage() {
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent:
-                    'center',
+                  justifyContent: 'center',
                   alignItems: 'center',
-                  gap: 2,
-                  flexWrap: 'wrap',
                   py: 3,
                 }}
               >
-                <Typography
-                  sx={{
-                    color: '#65717a',
-                    fontSize: '.8rem',
-                  }}
-                >
-                  Products per page
-                </Typography>
-
-                <FormControl
-                  size="small"
-                  sx={{
-                    minWidth: 90,
-                  }}
-                >
-                  <Select
-                    value={pageSize}
-                    onChange={(event) =>
-                      handlePageSizeChange(
-                        Number(
-                          event.target.value,
-                        ) as PageSize,
-                      )
-                    }
-                    aria-label="Products per page"
-                  >
-                    <MenuItem value={12}>
-                      12
-                    </MenuItem>
-
-                    <MenuItem value={20}>
-                      20
-                    </MenuItem>
-
-                    <MenuItem value={40}>
-                      40
-                    </MenuItem>
-
-                    <MenuItem value={50}>
-                      50
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
                 <Pagination
                   count={totalPages}
-                  page={Math.min(
-                    page,
-                    Math.max(
-                      1,
-                      totalPages,
-                    ),
-                  )}
+                  page={currentPage}
                   onChange={
                     handlePageChange
                   }

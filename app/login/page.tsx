@@ -10,7 +10,6 @@ import { isAdminUser, login } from '../../redux/slices/authSlice';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error } = useSelector((state: RootState) => state.auth);
@@ -56,10 +55,6 @@ export default function LoginPage() {
             required
           />
           
-          <FormControlLabel
-            control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
-            label="Remember me"
-          />
 
           {error && (
             <Typography color="error" role="alert">
