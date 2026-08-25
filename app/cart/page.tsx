@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Button, Container, Divider, TextField, Typography } from '@mui/material';
@@ -12,7 +12,10 @@ export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
   const token = useSelector((state: RootState) => state.auth.token);
   const items = useSelector((state: RootState) => state.cart.items);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
     if (!token && !localStorage.getItem('token')) router.replace('/login');
     try {
       const storedUser = JSON.parse(localStorage.getItem('user') || 'null') as { id?: string; _id?: string; email?: string } | null;
@@ -23,6 +26,8 @@ export default function CartPage() {
   }, [dispatch, router, token]);
 
   const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+  if (!mounted) return null;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f9', py: { xs: 2, md: 4 } }}>

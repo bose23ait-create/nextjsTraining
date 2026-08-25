@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { Alert, Box, Button, Container, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Container, Divider, TextField, Typography } from '@mui/material';
 import type { AppDispatch, RootState } from '../../redux/store';
 import { clearCart, setCartOwner } from '../../redux/slices/cartSlice';
 
@@ -38,6 +38,23 @@ export default function CheckoutPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!items.length) { router.push('/cart'); return; }
+
+    const outOfStock = items.filter(item => item.quantity > item.product.stock);
+    if (outOfStock.length > 0) {
+      setError(`Insufficient stock for: ${outOfStock.map(i => i.product.name).join(', ')}`);
+      return;
+    }
+
+    if (details.phone.length !== 10) {
+      setError('Mobile number must be exactly 10 digits');
+      return;
+    }
+
+    if (details.postalCode.length !== 6) {
+      setError('Postal code must be exactly 6 digits');
+      return;
+    }
+
     setPlacing(true); setError('');
     const authToken = token || localStorage.getItem('token');
     try {
@@ -52,5 +69,132 @@ export default function CheckoutPage() {
   };
 
   const fields: Array<[keyof CustomerDetails, string, string]> = [['name', 'Full name', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone', 'tel'], ['address', 'Address', 'text'], ['city', 'City', 'text'], ['state', 'State', 'text'], ['postalCode', 'Postal code', 'text']];
-  return <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f9', py: { xs: 2, md: 4 } }}><Container maxWidth="md"><Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}><Typography variant="h4" sx={{ fontWeight: 800 }}>Checkout</Typography><Button onClick={() => router.push('/cart')}>Back to cart</Button></Box><Box component="form" onSubmit={submit} sx={{ bgcolor: '#fff', p: { xs: 2, md: 3 }, border: '1px solid #e0e5eb' }}><Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Customer and delivery details</Typography>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{fields.map(([field, label, type]) => <TextField key={field} label={label} type={type} value={details[field]} onChange={(event) => update(field, event.target.value)} required fullWidth />)}</Box><Button type="submit" fullWidth variant="contained" size="large" disabled={placing || !items.length} sx={{ mt: 3 }}>{placing ? 'Completing checkout...' : 'Complete checkout'}</Button></Box></Container></Box>;
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const primary = '#2b78c6';
+  const primaryHover = '#2166ac';
+  const muted = '#5f6d79';
+  const line = '#d6dde5';
+
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6f9', py: { xs: 2, md: 4 } }}>
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-.02em', color: primary }}>Checkout</Typography>
+          <Button
+            onClick={() => router.push('/cart')}
+            variant="outlined"
+            sx={{ borderColor: primary, color: primary, '&:hover': { borderColor: primaryHover, color: primaryHover, bgcolor: '#eef5fc' } }}
+          >
+            Back to cart
+          </Button>
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.55fr .9fr' }, gap: 2.5 }}>
+          <Box
+            component="form"
+            onSubmit={submit}
+            sx={{
+              bgcolor: '#fff',
+              p: { xs: 2, md: 3 },
+              border: '1px solid #e0e5eb',
+              borderRadius: 2,
+              boxShadow: '0 8px 26px rgba(23, 37, 52, .04)',
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 900, mb: 0.5 }}>
+              Customer and delivery details
+            </Typography>
+            <Typography sx={{ color: muted, fontSize: '.9rem', mb: 2 }}>
+              Fill in your information to complete the order.
+            </Typography>
+
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+              {fields.map(([field, label, type]) => {
+                const fullRow = field === 'address';
+                
+                const isPhoneError = field === 'phone' && details.phone.length > 0 && !/^\d{10}$/.test(details.phone);
+                const isPostalError = field === 'postalCode' && details.postalCode.length > 0 && !/^\d{6}$/.test(details.postalCode);
+                const hasError = isPhoneError || isPostalError;
+                const helperText = isPhoneError ? 'Mobile number must be exactly 10 digits' : (isPostalError ? 'Postal code must be exactly 6 digits' : '');
+
+                return (
+                  <TextField
+                    key={field}
+                    label={label}
+                    type={type}
+                    value={details[field]}
+                    onChange={(event) => {
+                      let val = event.target.value;
+                      if (field === 'phone') {
+                        val = val.replace(/\D/g, '').slice(0, 10);
+                      } else if (field === 'postalCode') {
+                        val = val.replace(/\D/g, '').slice(0, 6);
+                      }
+                      update(field, val);
+                    }}
+                    required
+                    fullWidth
+                    error={hasError}
+                    helperText={helperText}
+                    sx={{
+                      gridColumn: { sm: fullRow ? '1 / -1' : 'auto' },
+                      '& .MuiInputLabel-root': { color: muted },
+                      '& .MuiInputLabel-root.Mui-focused': { color: primary },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: line },
+                        '&:hover fieldset': { borderColor: primary },
+                        '&.Mui-focused fieldset': { borderColor: primary },
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={placing || !items.length}
+              sx={{ mt: 2.5, bgcolor: primary, '&:hover': { bgcolor: primaryHover }, fontWeight: 800 }}
+            >
+              {placing ? 'Completing checkout...' : 'Complete checkout'}
+            </Button>
+          </Box>
+
+          <Box sx={{ bgcolor: '#fff', border: '1px solid #e0e5eb', borderRadius: 2, p: 2.25, height: 'fit-content', boxShadow: '0 8px 26px rgba(23, 37, 52, .04)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, mb: 1.5, color: primary }}>
+              Order summary
+            </Typography>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography sx={{ color: muted }}>Items</Typography>
+              <Chip label={totalItems} size="small" sx={{ bgcolor: '#eaf0f6', color: primary, fontWeight: 700 }} />
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography sx={{ color: muted }}>Subtotal</Typography>
+              <Typography sx={{ fontWeight: 700, color: primary }}>${subtotal.toFixed(2)}</Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+              <Typography sx={{ color: muted }}>Shipping</Typography>
+              <Typography sx={{ fontWeight: 700, color: primary }}>Free</Typography>
+            </Box>
+
+            <Divider sx={{ my: 1.25 }} />
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontWeight: 900, color: primary }}>Total</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: primary }}>${subtotal.toFixed(2)}</Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Container>
+    </Box>
+  );
 }

@@ -9,6 +9,7 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
   Container,
@@ -295,6 +296,10 @@ useEffect(() => {
     setPage(value);
   };
 
+  const handleOpenProduct = (productId: string) => {
+    router.push(`/products/${productId}`);
+  };
+
   /*
    * Logout.
    */
@@ -553,147 +558,177 @@ useEffect(() => {
                     overflow: 'hidden',
                     boxShadow:
                       '0 2px 8px rgba(22, 36, 49, .04)',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                 >
-                  {/* Image */}
-                  <Box
+                  <CardActionArea
+                    onClick={() => handleOpenProduct(product._id)}
+                    aria-label={`Open details for ${product.name}`}
                     sx={{
-                      position: 'relative',
-                      p: 1.5,
-                      bgcolor: '#f0f2f4',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      flexGrow: 1,
                     }}
                   >
-                    {product.stock > 0 ? (
-                      <Chip
-                        label="Available"
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 12,
-                          left: 12,
-                          zIndex: 1,
-                          bgcolor: '#e4f6eb',
-                          color: '#269b58',
-                          fontSize: '.7rem',
-                          fontWeight: 700,
-                        }}
-                      />
-                    ) : (
-                      <Chip
-                        label="Sold out"
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 12,
-                          left: 12,
-                          zIndex: 1,
-                          bgcolor: '#fcebe3',
-                          color: '#c27643',
-                          fontSize: '.7rem',
-                          fontWeight: 700,
-                        }}
-                      />
-                    )}
+                    {/* Image */}
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        p: 1.5,
+                        bgcolor: '#f0f2f4',
+                      }}
+                    >
+                      {product.stock > 0 ? (
+                        <Chip
+                          label="Available"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            zIndex: 1,
+                            bgcolor: '#e4f6eb',
+                            color: '#269b58',
+                            fontSize: '.7rem',
+                            fontWeight: 700,
+                          }}
+                        />
+                      ) : (
+                        <Chip
+                          label="Sold out"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            zIndex: 1,
+                            bgcolor: '#fcebe3',
+                            color: '#c27643',
+                            fontSize: '.7rem',
+                            fontWeight: 700,
+                          }}
+                        />
+                      )}
 
-                    {product.images[0] ? (
-                      <Box
-                        component="img"
-                        src={imageUrl(
-                          product.images[0],
-                        )}
-                        alt={product.name}
+                      {product.images[0] ? (
+                        <Box
+                          component="img"
+                          src={imageUrl(
+                            product.images[0],
+                          )}
+                          alt={product.name}
+                          sx={{
+                            display: 'block',
+                            width: '100%',
+                            aspectRatio: '1 / 1',
+                            objectFit: 'cover',
+                            borderRadius: 1.5,
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: '100%',
+                            aspectRatio: '1 / 1',
+                            borderRadius: 1.5,
+                            bgcolor: '#e1e6e8',
+                            display: 'grid',
+                            placeItems: 'center',
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: '#71808a',
+                              fontSize: '.8rem',
+                            }}
+                          >
+                            No image
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Product information */}
+                    <CardContent
+                      sx={{
+                        p: 1.75,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flexGrow: 1,
+                      }}
+                    >
+                      <Typography
                         sx={{
-                          display: 'block',
-                          width: '100%',
-                          aspectRatio: '1 / 1',
-                          objectFit: 'cover',
-                          borderRadius: 1.5,
+                          fontWeight: 750,
+                          fontSize: '.95rem',
+                          lineHeight: 1.3,
+                          minHeight: '2.6em',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
-                      />
-                    ) : (
+                      >
+                        {product.name}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          color: '#87919a',
+                          fontSize: '.78rem',
+                          mt: 0.8,
+                          lineHeight: 1.4,
+                          minHeight: '4.2em',
+                          maxHeight: '4.2em',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {product.description}
+                      </Typography>
+
                       <Box
                         sx={{
-                          width: '100%',
-                          aspectRatio: '1 / 1',
-                          borderRadius: 1.5,
-                          bgcolor: '#e1e6e8',
-                          display: 'grid',
-                          placeItems: 'center',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          mt: 'auto',
+                          pt: 1.5,
+                          borderTop:
+                            '1px solid #edf0f2',
                         }}
                       >
                         <Typography
                           sx={{
-                            color: '#71808a',
-                            fontSize: '.8rem',
+                            color: '#65717a',
+                            fontSize: '.78rem',
                           }}
                         >
-                          No image
+                          {product.stock > 0
+                            ? `${product.stock} in stock`
+                            : 'Unavailable'}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            color: '#4b5962',
+                            fontSize: '.95rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          ${product.price.toFixed(2)}
                         </Typography>
                       </Box>
-                    )}
-                  </Box>
-
-                  {/* Product information */}
-                  <CardContent
-                    sx={{
-                      p: 1.75,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontWeight: 750,
-                        fontSize: '.95rem',
-                        lineHeight: 1.3,
-                        minHeight: 40,
-                      }}
-                    >
-                      {product.name}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        color: '#87919a',
-                        fontSize: '.78rem',
-                        mt: 0.8,
-                        minHeight: 34,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {product.description}
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        mt: 1.5,
-                        pt: 1.25,
-                        borderTop:
-                          '1px solid #edf0f2',
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          color: '#65717a',
-                          fontSize: '.78rem',
-                        }}
-                      >
-                        {product.stock > 0
-                          ? `${product.stock} in stock`
-                          : 'Unavailable'}
-                      </Typography>
-
-                      <Typography
-                        sx={{
-                          color: '#4b5962',
-                          fontSize: '.95rem',
-                          fontWeight: 800,
-                        }}
-                      >
-                        ${product.price.toFixed(2)}
-                      </Typography>
-                    </Box>
+                    </CardContent>
+                  </CardActionArea>
+                  <CardContent sx={{ pt: 0, px: 1.75, pb: 1.75 }}>
                     <Button
                       fullWidth
                       variant="contained"
@@ -702,7 +737,7 @@ useEffect(() => {
                         dispatch(addToCart(product));
                         setCartMessage(`${product.name} added to cart successfully`);
                       }}
-                      sx={{ mt: 1.5, bgcolor: '#182431', '&:hover': { bgcolor: '#2d3c49' } }}
+                      sx={{ bgcolor: '#182431', '&:hover': { bgcolor: '#2d3c49' } }}
                     >
                       Add to cart
                     </Button>
