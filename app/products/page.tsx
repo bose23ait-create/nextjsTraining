@@ -22,11 +22,13 @@ import {
   FormControl,
   MenuItem,
   Select,
+  Snackbar,
 } from '@mui/material';
 
 import type { AppDispatch, RootState } from '../../redux/store';
 import { getProducts } from '../../redux/slices/productSlice';
 import { logout } from '../../redux/slices/authSlice';
+import { addToCart, setCartOwner } from '../../redux/slices/cartSlice';
 
 type ProductFilter = 'all' | 'available' ;
 
@@ -58,6 +60,9 @@ export default function ProductsPage() {
 
   const user = useSelector(
     (state: RootState) => state.auth.user,
+  );
+  const cartCount = useSelector((state: RootState) =>
+    state.cart.items.reduce((total, item) => total + item.quantity, 0),
   );
 
   const {
@@ -94,6 +99,8 @@ export default function ProductsPage() {
 
   const [restored, setRestored] = useState(false);
 
+  const [cartMessage, setCartMessage] = useState('');
+
   /*
    * Mount component on client.
    */
@@ -106,6 +113,10 @@ export default function ProductsPage() {
       window.cancelAnimationFrame(frame);
     };
   }, []);
+
+  useEffect(() => {
+    if (mounted) dispatch(setCartOwner(userStorageId));
+  }, [dispatch, mounted, userStorageId]);
 
   /*
    * Restore filter/search/sort/page
@@ -335,6 +346,8 @@ useEffect(() => {
           </Typography>
 
           <Stack direction="row" spacing={1}>
+            <Button variant="outlined" onClick={() => router.push('/cart')}>Cart ({cartCount})</Button>
+            <Button variant="outlined" onClick={() => router.push('/orders')}>Orders</Button>
             <Button
               variant="outlined"
               onClick={handleLogout}
@@ -681,6 +694,18 @@ useEffect(() => {
                         ${product.price.toFixed(2)}
                       </Typography>
                     </Box>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      disabled={product.stock === 0}
+                      onClick={() => {
+                        dispatch(addToCart(product));
+                        setCartMessage(`${product.name} added to cart successfully`);
+                      }}
+                      sx={{ mt: 1.5, bgcolor: '#182431', '&:hover': { bgcolor: '#2d3c49' } }}
+                    >
+                      Add to cart
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -708,6 +733,16 @@ useEffect(() => {
           )}
 
         </PaperSection>
+        <Snackbar
+          open={Boolean(cartMessage)}
+          autoHideDuration={3000}
+          onClose={() => setCartMessage('')}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setCartMessage('')} severity="success" variant="filled">
+            {cartMessage}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );

@@ -413,18 +413,21 @@ const handleDelete = async (
             </Typography>
           </Box>
 
-          <Button
-            variant="outlined"
-            onClick={handleLogout}
-            sx={{
-              minWidth: 78,
-              color: '#182431',
-              borderColor: '#d9dfe7',
-              bgcolor: '#fff',
-            }}
-          >
-            Log out
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" onClick={() => router.push('/admin/orders')}>Orders</Button>
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                minWidth: 78,
+                color: '#182431',
+                borderColor: '#d9dfe7',
+                bgcolor: '#fff',
+              }}
+            >
+              Log out
+            </Button>
+          </Box>
         </Box>
 
         {/* Main container */}
