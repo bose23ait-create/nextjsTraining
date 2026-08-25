@@ -188,7 +188,7 @@ export default function ProductDetailsPage() {
                 </Stack>
 
                 <Typography sx={{ fontSize: '1.7rem', fontWeight: 900, color: '#182431', mb: 1.25 }}>
-                  ${product.price.toFixed(2)}
+                  ₹{product.price.toFixed(2)}
                 </Typography>
 
                 <Divider sx={{ borderColor: '#edf1f4', mb: 1.5 }} />

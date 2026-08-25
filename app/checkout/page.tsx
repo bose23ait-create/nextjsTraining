@@ -178,7 +178,7 @@ export default function CheckoutPage() {
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography sx={{ color: muted }}>Subtotal</Typography>
-              <Typography sx={{ fontWeight: 700, color: primary }}>${subtotal.toFixed(2)}</Typography>
+              <Typography sx={{ fontWeight: 700, color: primary }}>₹{subtotal.toFixed(2)}</Typography>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
@@ -190,7 +190,7 @@ export default function CheckoutPage() {
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography sx={{ fontWeight: 900, color: primary }}>Total</Typography>
-              <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: primary }}>${subtotal.toFixed(2)}</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: primary }}>₹{subtotal.toFixed(2)}</Typography>
             </Box>
           </Box>
         </Box>

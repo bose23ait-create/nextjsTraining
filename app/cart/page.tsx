@@ -48,7 +48,7 @@ export default function CartPage() {
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'center' } }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontWeight: 700 }}>{item.product.name}</Typography>
-                    <Typography color="text.secondary">${item.product.price.toFixed(2)} each</Typography>
+                    <Typography color="text.secondary">₹{item.product.price.toFixed(2)} each</Typography>
                   </Box>
                   <TextField
                     label="Quantity"
@@ -58,7 +58,7 @@ export default function CartPage() {
                     slotProps={{ htmlInput: { min: 0, max: item.product.stock } }}
                     sx={{ width: 110 }}
                   />
-                  <Typography sx={{ fontWeight: 700 }}>${(item.product.price * item.quantity).toFixed(2)}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>₹{(item.product.price * item.quantity).toFixed(2)}</Typography>
                   <Button color="error" onClick={() => dispatch(removeFromCart(item.product._id))}>Remove</Button>
                 </Box>
                 <Divider sx={{ mt: 2 }} />
@@ -66,7 +66,7 @@ export default function CartPage() {
             ))}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 800 }}>Total</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>${total.toFixed(2)}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>₹{total.toFixed(2)}</Typography>
             </Box>
             <Button fullWidth variant="contained" size="large" onClick={() => router.push('/checkout')} sx={{ mt: 2 }}>
               Proceed to checkout

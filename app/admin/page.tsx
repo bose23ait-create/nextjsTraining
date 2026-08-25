@@ -839,7 +839,7 @@ const handleDelete = async (
                               color: '#4b5962',
                             }}
                           >
-                            $
+                            ₹
                             {product.price.toFixed(
                               2,
                             )}

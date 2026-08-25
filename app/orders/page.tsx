@@ -79,7 +79,7 @@ export default function OrdersPage() {
               <Box key={`${order._id}-${item.productId}`} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
                 {item.images?.[0] && <Box component="img" src={imageUrl(item.images[0])} alt="" sx={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 1 }} />}
                 <Typography sx={{ flex: 1 }}>{item.name} x {item.quantity}</Typography>
-                <Typography>${(item.price * item.quantity).toFixed(2)}</Typography>
+                <Typography>₹{(item.price * item.quantity).toFixed(2)}</Typography>
               </Box>
             ))}
             <Divider sx={{ my: 1 }} />
@@ -89,7 +89,7 @@ export default function OrdersPage() {
                 size="small"
                 color={order.status === 'placed' || order.status === 'completed' ? 'success' : 'default'}
               />
-              <Typography sx={{ fontWeight: 800 }}>${order.total.toFixed(2)}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>₹{order.total.toFixed(2)}</Typography>
             </Box>
           </Box>
         ))}
