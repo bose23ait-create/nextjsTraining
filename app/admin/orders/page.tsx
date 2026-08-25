@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../redux/store';
 import { isAdminUser } from '../../../redux/slices/authSlice';
 
-type OrderStatus = 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+type OrderStatus = 'pending' | 'processing' | 'shipped' | 'completed';
 type Order = { _id: string; createdAt: string; total: number; status: OrderStatus; items: Array<{ productId: string; name: string; price: number; quantity: number }>; customerDetails?: { name: string; email: string; phone: string; address: string; city: string; state: string; postalCode: string } };
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const statuses: OrderStatus[] = ['pending', 'processing', 'shipped', 'completed'];
