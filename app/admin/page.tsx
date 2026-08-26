@@ -415,6 +415,7 @@ const handleDelete = async (
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button variant="outlined" onClick={() => router.push('/admin/orders')}>Orders</Button>
+            <Button variant="outlined" onClick={() => router.push('/admin/payments')}>Payments</Button>
             <Button
               variant="outlined"
               onClick={handleLogout}
