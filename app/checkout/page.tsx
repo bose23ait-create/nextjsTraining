@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { Alert, Box, Button, Chip, Container, Divider, TextField, Typography } from '@mui/material';
 import type { AppDispatch, RootState } from '../../redux/store';
-import { clearCart, setCartOwner } from '../../redux/slices/cartSlice';
+import { setCartOwner } from '../../redux/slices/cartSlice';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 type CustomerDetails = { name: string; email: string; phone: string; address: string; city: string; state: string; postalCode: string };
@@ -22,6 +22,11 @@ export default function CheckoutPage() {
   const [details, setDetails] = useState<CustomerDetails>(emptyDetails);
   const [error, setError] = useState('');
   const [placing, setPlacing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    queueMicrotask(() => setIsMounted(true));
+  }, []);
 
   useEffect(() => {
     if (!token && !localStorage.getItem('token')) { router.replace('/login'); return; }
@@ -62,15 +67,18 @@ export default function CheckoutPage() {
       const response = await fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` }, body: JSON.stringify({ items: items.map((item) => ({ productId: item.product._id, quantity: item.quantity })), customerDetails: details }) });
       const data = await response.json();
       if (!response.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Unable to complete checkout');
-      dispatch(clearCart());
-      router.push('/orders');
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        router.push('/orders');
+      }
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Unable to complete checkout'); }
     finally { setPlacing(false); }
   };
 
   const fields: Array<[keyof CustomerDetails, string, string]> = [['name', 'Full name', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone', 'tel'], ['address', 'Address', 'text'], ['city', 'City', 'text'], ['state', 'State', 'text'], ['postalCode', 'Postal code', 'text']];
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const totalItems = isMounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+  const subtotal = isMounted ? items.reduce((sum, item) => sum + item.product.price * item.quantity, 0) : 0;
   const primary = '#2b78c6';
   const primaryHover = '#2166ac';
   const muted = '#5f6d79';
@@ -159,7 +167,7 @@ export default function CheckoutPage() {
               fullWidth
               variant="contained"
               size="large"
-              disabled={placing || !items.length}
+              disabled={!isMounted || placing || !items.length}
               sx={{ mt: 2.5, bgcolor: primary, '&:hover': { bgcolor: primaryHover }, fontWeight: 800 }}
             >
               {placing ? 'Completing checkout...' : 'Complete checkout'}
