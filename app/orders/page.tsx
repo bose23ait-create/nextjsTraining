@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Box, Button, Chip, Container, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Container, Divider, Skeleton, Stack, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions } from '@mui/material';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../redux/store';
 
@@ -13,6 +13,7 @@ type Order = {
   createdAt: string;
   total: number;
   status: string;
+  paymentStatus?: string;
   customerDetails?: { name: string; email: string; phone: string; address: string; city: string; state: string; postalCode: string };
   items: Array<{ productId: string; name: string; price: number; quantity: number; images?: string[] }>;
 };
@@ -26,12 +27,18 @@ export default function OrdersPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+
+  const fetchOrders = useCallback(() => {
     const authToken = token || localStorage.getItem('token');
     if (!authToken) {
       router.replace('/login');
       return;
     }
+    // setLoading is already true initially, we don't need to set it synchronously again here.
     void fetch(`${API_URL}/orders/my`, { headers: { Authorization: `Bearer ${authToken}` } })
       .then(async (response) => {
         const data = await response.json();
@@ -46,6 +53,47 @@ export default function OrdersPage() {
       .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : 'Unable to load order history'))
       .finally(() => setLoading(false));
   }, [router, token]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const handleOpenCancelModal = (orderId: string) => {
+    setCancelingOrderId(orderId);
+    setCancelReason('');
+    setCancelModalOpen(true);
+  };
+
+  const handleCloseCancelModal = () => {
+    setCancelModalOpen(false);
+    setCancelingOrderId(null);
+  };
+
+  const submitCancelRequest = async () => {
+    if (!cancelingOrderId || !cancelReason.trim()) return;
+    setCancelSubmitting(true);
+    try {
+      const authToken = token || localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/orders/${cancelingOrderId}/request-cancellation`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ reason: cancelReason }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to request cancellation');
+      }
+      handleCloseCancelModal();
+      fetchOrders(); // Refresh order list
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to request cancellation');
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'var(--canvas)', py: { xs: 2, md: 4 } }}>
@@ -83,17 +131,66 @@ export default function OrdersPage() {
               </Box>
             ))}
             <Divider sx={{ my: 1 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Chip
-                label={order.status === 'placed' ? 'completed' : order.status}
-                size="small"
-                color={order.status === 'placed' || order.status === 'completed' ? 'success' : 'default'}
-              />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Chip
+                  label={order.status === 'placed' ? 'completed' : order.status.replace('_', ' ')}
+                  size="small"
+                  color={
+                    order.status === 'placed' || order.status === 'completed'
+                      ? 'success'
+                      : order.status === 'cancelled'
+                      ? 'error'
+                      : order.status === 'cancellation_requested'
+                      ? 'warning'
+                      : 'default'
+                  }
+                />
+                {order.paymentStatus === 'refunded' && (
+                  <Chip label="Refunded" size="small" color="info" />
+                )}
+                {(order.status === 'pending' || order.status === 'processing') && (
+                  <Button size="small" variant="outlined" color="error" onClick={() => handleOpenCancelModal(order._id)}>
+                    Cancel Order
+                  </Button>
+                )}
+              </Box>
               <Typography sx={{ fontWeight: 800 }}>₹{order.total.toFixed(2)}</Typography>
             </Box>
           </Box>
         ))}
       </Container>
+
+      <Dialog open={cancelModalOpen} onClose={handleCloseCancelModal}>
+        <DialogTitle>Request Order Cancellation</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Please provide a reason for cancelling this order. Once submitted, our team will review the request and process your refund.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Cancellation Reason"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelModal} disabled={cancelSubmitting}>Close</Button>
+          <Button 
+            onClick={submitCancelRequest} 
+            color="error" 
+            variant="contained" 
+            disabled={!cancelReason.trim() || cancelSubmitting}
+          >
+            {cancelSubmitting ? 'Submitting...' : 'Submit Request'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
